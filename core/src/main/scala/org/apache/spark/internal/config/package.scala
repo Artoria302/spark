@@ -680,6 +680,12 @@ package object config {
     .timeConf(TimeUnit.MILLISECONDS)
     .createWithDefaultString("3s")
 
+  private[spark] val LOCALITY_SKIP_NONE_EXECUTOR_HOST =
+    ConfigBuilder("spark.locality.skip.none.executor.host")
+    .version("3.4.0")
+    .booleanConf
+    .createWithDefault(true)
+
   private[spark] val SHUFFLE_SERVICE_ENABLED =
     ConfigBuilder("spark.shuffle.service.enabled")
       .version("1.2.0")

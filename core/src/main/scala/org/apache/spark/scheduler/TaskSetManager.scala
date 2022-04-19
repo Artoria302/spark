@@ -206,6 +206,7 @@ private[spark] class TaskSetManager(
   addPendingTasks()
 
   private def addPendingTasks(): Unit = {
+    logDebug(s"spark.locality.skip.none.executor.host: $localitySkipNoneExecutorHost")
     val (_, duration) = Utils.timeTakenMs {
       for (i <- (0 until numTasks).reverse) {
         addPendingTask(i, resolveRacks = false)
@@ -237,6 +238,7 @@ private[spark] class TaskSetManager(
   private val legacyLocalityWaitReset = conf.get(LEGACY_LOCALITY_WAIT_RESET)
   private var currentLocalityIndex = 0 // Index of our current locality level in validLocalityLevels
   private var lastLocalityWaitResetTime = clock.getTimeMillis()  // Time we last reset locality wait
+  private val localitySkipNoneExecutorHost = conf.get(LOCALITY_SKIP_NONE_EXECUTOR_HOST)
 
   // Time to wait at each level
   private[scheduler] var localityWaits = myLocalityLevels.map(getLocalityWait)
@@ -273,7 +275,16 @@ private[spark] class TaskSetManager(
           }
         case _ =>
       }
-      pendingTaskSetToAddTo.forHost.getOrElseUpdate(loc.host, new ArrayBuffer) += index
+
+      // it better not add to host level queue, if is there is no executor on that host
+      if (localitySkipNoneExecutorHost) {
+        if (sched.hasExecutorsAliveOnHost(loc.host)) {
+          logDebug(s"Pending task $index has a host location at ${loc.host}.")
+          pendingTaskSetToAddTo.forHost.getOrElseUpdate(loc.host, new ArrayBuffer) += index
+        }
+      } else {
+        pendingTaskSetToAddTo.forHost.getOrElseUpdate(loc.host, new ArrayBuffer) += index
+      }
 
       if (resolveRacks) {
         sched.getRackForHost(loc.host).foreach { rack =>
