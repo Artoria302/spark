@@ -3764,6 +3764,33 @@ object SQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val OUTPUT_COALESCE_PARTITIONS_ENABLED =
+    buildConf("spark.sql.output.coalescePartitions.enabled")
+      .doc(s"When true and average output partitions size is smaller than " +
+        s" ${OUTPUT_AVG_SMALL_PARTITION_SIZE_IN_MEGA_BYTES.key}, " +
+        "Spark will coalesce contiguous output partitions according to " +
+        s"the target size (specified by '${OUTPUT_PARTITION_SIZE_IN_MEGA_BYTES.key}'), " +
+        "to avoid too many small output files.")
+      .version("3.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val OUTPUT_PARTITION_SIZE_IN_MEGA_BYTES =
+    buildConf("spark.sql.output.partitionSizeInMegaBytes")
+      .doc("The desired size in mega bytes of each output partition.")
+      .version("3.4.0")
+      .bytesConf(ByteUnit.MiB)
+      .checkValue(_ > 0, "The value must be non-negative.")
+      .createWithDefaultString("256MB")
+
+  val OUTPUT_AVG_SMALL_PARTITION_SIZE_IN_MEGA_BYTES =
+    buildConf("spark.sql.output.avgSmallPartitionSizeInMegaBytes")
+      .doc("The average size in mega bytes of the original output partitions.")
+      .version("3.4.0")
+      .bytesConf(ByteUnit.MiB)
+      .checkValue(_ > 0, "The value must be non-negative.")
+      .createWithDefaultString("64MB")
+
   /**
    * Holds information about keys that have been deprecated.
    *
